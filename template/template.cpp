@@ -73,7 +73,7 @@ void MouseScrollCallback( GLFWwindow*, double, double y )
 {
 	app->MouseWheel( (float)y );
 }
-void MousePosCallback( GLFWwindow*, double x, double y )
+void MousePosCallback( GLFWwindow* window, double x, double y )
 {
 	if (app) app->MouseMove( (int)x, (int)y );
 }

@@ -1,0 +1,9 @@
+// User file from VS
+*vcxproj.user
+
+// Generated execs' files
+x64/*
+
+// Ignore personally generated UI and camera's info files
+camera.bin
+imgui.ini

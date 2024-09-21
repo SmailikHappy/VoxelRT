@@ -18,16 +18,20 @@ public:
 	void MouseMove( int x, int y )
 	{
 	#if defined(DOUBLESIZE) && !defined(FULLSCREEN)
-		mousePos.x = x / 2, mousePos.y = y / 2;
+		int2 newPos{ x / 2, y / 2 };
 	#else
-		mousePos.x = x, mousePos.y = y;
+		int2 newPos{ x, y };
 	#endif
+
+		dMousePos = newPos - mousePos;
+		mousePos = newPos;
 	}
 	void MouseWheel( float y ) { y = 0; /* implement if you want to handle the mouse wheel */ }
 	void KeyUp( int key ) { key = 0; /* implement if you want to handle keys */ }
 	void KeyDown( int key ) { key = 0; /* implement if you want to handle keys */ }
 	// data members
 	int2 mousePos;
+	int2 dMousePos;
 	float3* accumulator;	// for episode 3
 	float3* history;		// for episode 5
 	Scene scene;

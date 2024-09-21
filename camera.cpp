@@ -4,16 +4,16 @@ Camera::Camera()
 {
 	// try to load a camera
 	FILE* f = fopen( "camera.bin", "rb" );
-	if (f)
+	/*if (f)
 	{
 		fread( this, 1, sizeof( Camera ), f );
 		fclose( f );
 	}
-	else
+	else*/
 	{
 		// setup a basic view frustum
 		camPos = float3( 0, 0, -2 );
-		camTarget = float3( 0, 0, -1 );
+		camAhead = float3( 0, 0, 1 );
 		topLeft = float3( -aspect, 1, 0 );
 		topRight = float3( aspect, 1, 0 );
 		bottomLeft = float3( -aspect, -1, 0 );
@@ -28,7 +28,7 @@ Camera::~Camera()
 	fclose( f );
 }
 
-Ray Camera::GetPrimaryRay( const float x, const float y )
+Ray Camera::GetPrimaryRay(const float x, const float y)
 {
 	// calculate pixel position on virtual screen plane
 	const float u = (float)x * (1.0f / SCRWIDTH);
@@ -42,35 +42,38 @@ Ray Camera::GetPrimaryRay( const float x, const float y )
 	// - there are far cooler camera models, e.g. try 'Panini projection'.
 }
 
-bool Camera::HandleInput( const float t )
+bool Camera::HandleInput(const float dt, const int2 const& mouseMovement)
 {
 	if (!WindowHasFocus()) return false;
-	float speed = 0.0015f * t;
-	float3 ahead = normalize( camTarget - camPos );
+	
+	float dmove = speed * dt;
+	
 	float3 tmpUp( 0, 1, 0 );
-	float3 right = normalize( cross( tmpUp, ahead ) );
-	float3 up = normalize( cross( ahead, right ) );
+	float3 right = normalize( cross( tmpUp, camAhead) );
+	float3 up = normalize( cross(camAhead, right ) );
+	
 	bool changed = false;
-	if (IsKeyDown( GLFW_KEY_UP )) camTarget -= speed * up, changed = true;
-	if (IsKeyDown( GLFW_KEY_DOWN )) camTarget += speed * up, changed = true;
-	if (IsKeyDown( GLFW_KEY_LEFT )) camTarget -= speed * right, changed = true;
-	if (IsKeyDown( GLFW_KEY_RIGHT )) camTarget += speed * right, changed = true;
-	ahead = normalize( camTarget - camPos );
-	right = normalize( cross( tmpUp, ahead ) );
-	up = normalize( cross( ahead, right ) );
+	
 	if (IsKeyDown( GLFW_KEY_A )) camPos -= speed * right, changed = true;
 	if (IsKeyDown( GLFW_KEY_D )) camPos += speed * right, changed = true;
-	if (GetAsyncKeyState( 'W' )) camPos += speed * ahead, changed = true;
-	if (IsKeyDown( GLFW_KEY_S )) camPos -= speed * ahead, changed = true;
-	if (IsKeyDown( GLFW_KEY_R )) camPos += speed * up, changed = true;
-	if (IsKeyDown( GLFW_KEY_F )) camPos -= speed * up, changed = true;
-	camTarget = camPos + ahead;
-	ahead = normalize( camTarget - camPos );
-	up = normalize( cross( ahead, right ) );
-	right = normalize( cross( up, ahead ) );
-	topLeft = camPos + 2 * ahead - aspect * right + up;
-	topRight = camPos + 2 * ahead + aspect * right + up;
-	bottomLeft = camPos + 2 * ahead - aspect * right - up;
+	if (GetAsyncKeyState( 'W' )) camPos += speed * camAhead, changed = true;
+	if (IsKeyDown( GLFW_KEY_S )) camPos -= speed * camAhead, changed = true;
+	if (IsKeyDown( GLFW_KEY_E )) camPos += speed * tmpUp, changed = true;
+	if (IsKeyDown( GLFW_KEY_Q )) camPos -= speed * tmpUp, changed = true;
+	
+	
+	topLeft = camPos + 2 * camAhead - aspect * right + up;
+	topRight = camPos + 2 * camAhead + aspect * right + up;
+	bottomLeft = camPos + 2 * camAhead - aspect * right - up;
+
+	//camAhead = normalize(camAhead + sensitivity * mouseMovement.x * right);
+	//camAhead = normalize(camAhead + sensitivity * mouseMovement.y * up);
+
+	if (IsKeyDown(GLFW_KEY_LEFT))	camAhead = normalize(camAhead - sensitivity * dt * 0.1f * right);
+	if (IsKeyDown(GLFW_KEY_RIGHT))	camAhead = normalize(camAhead + sensitivity * dt * 0.1f * right);
+	if (IsKeyDown(GLFW_KEY_UP))		camAhead = normalize(camAhead + sensitivity * dt * 0.1f * up);
+	if (IsKeyDown(GLFW_KEY_DOWN))	camAhead = normalize(camAhead - sensitivity * dt * 0.1f * up);
+
 	if (!changed) return false;
 	return true;
 }

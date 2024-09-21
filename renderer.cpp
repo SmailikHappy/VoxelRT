@@ -18,6 +18,7 @@ float3 Renderer::Trace( Ray& ray, int, int, int /* we'll use these later */ )
 // -----------------------------------------------------------
 void Renderer::Init()
 {
+	dMousePos = int2{ 0, 0 };
 }
 
 // -----------------------------------------------------------
@@ -46,7 +47,8 @@ void Renderer::Tick( float deltaTime )
 	float fps = 1000.0f / avg, rps = (SCRWIDTH * SCRHEIGHT) / avg;
 	printf( "%5.2fms (%.1ffps) - %.1fMrays/s\n", avg, fps, rps / 1000 );
 	// handle user input
-	camera.HandleInput( deltaTime );
+	camera.HandleInput( deltaTime, dMousePos );
+	dMousePos = int2{ 0, 0 };
 }
 
 // -----------------------------------------------------------
