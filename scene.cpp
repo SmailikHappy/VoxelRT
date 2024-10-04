@@ -22,12 +22,18 @@ inline bool point_in_cube( const float3& pos )
 
 Scene::Scene()
 {
+	grid = (uint*)MALLOC64(GRIDSIZE3 * sizeof(uint));
+	memset(grid, 0, GRIDSIZE3 * sizeof(uint));
+	//LoadDefaultLevel();
+}
+
+void Tmpl8::Scene::LoadDefaultLevel()
+{
 	// allocate room for the world
-	grid = (uint*)MALLOC64( GRIDSIZE3 * sizeof( uint ) );
-	memset( grid, 0, GRIDSIZE3 * sizeof( uint ) );
+	
 	// initialize the scene using Perlin noise, parallel over z
 #pragma omp parallel for schedule(dynamic)
-	for (int z = 0; z < 128; z++)
+	for (int z = 0; z < WORLDSIZE; z++)
 	{
 		const float fz = (float)z / WORLDSIZE;
 		for (int y = 0; y < WORLDSIZE; y++)
@@ -35,10 +41,101 @@ Scene::Scene()
 			float fx = 0, fy = (float)y / WORLDSIZE;
 			for (int x = 0; x < WORLDSIZE; x++, fx += 1.0f / WORLDSIZE)
 			{
-				const float n = noise3D( fx, fy, fz );
-				Set( x, y, z, n > 0.09f ? 0xffffff : 0);
+				const float n = noise3D(fx, fy, fz);
+				Set(x, y, z, n > 0.09f ? 0xffffff : 0);
 			}
 		}
+	}
+}
+
+bool Tmpl8::Scene::LoadLevelFromFile(const char* filepath)
+{
+	// Loading a level from a file
+	FILE* f = fopen(filepath, "rb");
+	
+	// Moving some data to heap for effiecency and to save stack
+	SceneData* data = new SceneData();
+
+	if (f)
+	{
+		fread(data, 1, sizeof(SceneData), f);
+		fclose(f);
+	}
+	else
+	{
+		printf("Failed to load the level.");
+		LoadDefaultLevel();
+		delete data;
+		return false;
+	}
+
+	memset(grid, 0, GRIDSIZE3 * sizeof(uint));
+
+	// Let's not do it using memset, just afraid of doing something wrong
+#pragma omp parallel for schedule(dynamic)
+	for (int z = 0; z < WORLDSIZE; z++)
+	{
+		for (int y = 0; y < WORLDSIZE; y++)
+		{
+			for (int x = 0; x < WORLDSIZE; x++)
+			{
+				Set(x, y, z, data->grid[x + y * GRIDSIZE + z * GRIDSIZE2]);
+			}
+		}
+	}
+
+	lights.clear();
+	for (uint i = 0; i < data->lightCount; i++)
+	{
+		lights.push_back(data->lights[i]);
+	}
+
+	delete data;
+
+	return true;
+}
+
+bool Tmpl8::Scene::SaveLevelToFile(const char* filepath)
+{
+	// Save a level to the file
+	FILE* f = fopen(filepath, "wb");
+
+	// Moving some data to heap for effiecency and to save stack
+	SceneData* data = new SceneData();
+
+	if (f)
+	{
+		// Let's not do it using memset, just afraid of doing something wrong
+#pragma omp parallel for schedule(dynamic)
+		for (int z = 0; z < WORLDSIZE; z++)
+		{
+			for (int y = 0; y < WORLDSIZE; y++)
+			{
+				for (int x = 0; x < WORLDSIZE; x++)
+				{
+					data->grid[x + y * GRIDSIZE + z * GRIDSIZE2] = grid[x + y * GRIDSIZE + z * GRIDSIZE2];
+				}
+			}
+		}
+
+		data->lightCount = static_cast<unsigned int>(lights.size());
+
+		for (uint i = 0; i < data->lightCount; i++)
+		{
+			data->lights[i] = lights.at(i);
+		}
+
+		fwrite(data, 1, sizeof(SceneData), f);
+		fclose(f);
+
+		delete data;
+		return true;
+	}
+	else
+	{
+		printf("Failed to save the level");
+		delete data;
+		return false;
 	}
 }
 
@@ -154,29 +251,29 @@ bool Scene::IsOccluded( Ray& ray ) const
 }
 
 
-float3 Scene::ShadowRay(unique_ptr<Light> const& light, float3 const& pixelWorldPos, float3 const& pixelNormal) const
+float3 Scene::ShadowRay(Light const& light, float3 const& pixelWorldPos, float3 const& pixelNormal) const
 {
-	if (!light.get()->isEnabled) return float3(0.0f);
+	if (!light.isEnabled) return float3(0.0f);
 
-	switch (light.get()->type)
+	switch (light.type)
 	{
 	case LightType::Point:
 	{
-		float3 lightToPixelVector = pixelWorldPos - light.get()->pos;
+		float3 lightToPixelVector = pixelWorldPos - light.pos;
 		float3 direction = normalize(lightToPixelVector);
 		float rayLength = length(lightToPixelVector);
 
-		if (rayLength > light.get()->range) return float3(0.0f);
+		if (rayLength > light.range) return float3(0.0f);
 
-		Ray r(light.get()->pos, direction, rayLength);
+		Ray r(light.pos, direction, rayLength);
 
 		if (IsOccluded(r))
 			return float3(0.0f);
 		else
 		{
-			float3 result = light.get()->color;
-			result *= (light.get()->range - rayLength) / light.get()->range;
-			result *= light.get()->intensity;	/// REDO, should be something else
+			float3 result = light.color;
+			result *= (light.range - rayLength) / light.range;
+			result *= light.intensity;	/// REDO, should be something else
 			result *= dot(pixelNormal, -direction);
 
 			return result;
@@ -188,15 +285,15 @@ float3 Scene::ShadowRay(unique_ptr<Light> const& light, float3 const& pixelWorld
 	case LightType::Directional:
 	{
 		// Casting an opposite ray, as it is the same
-		Ray r(pixelWorldPos, -light.get()->direction);
+		Ray r(pixelWorldPos, -light.direction);
 
 		if (IsOccluded(r))
 			return float3(0.0f);
 		else
 		{
-			float3 result = light.get()->color;
-			result *= light.get()->intensity;	/// REDO, should be something else
-			result *= dot(pixelNormal, -light.get()->direction);
+			float3 result = light.color;
+			result *= light.intensity;	/// REDO, should be something else
+			result *= dot(pixelNormal, -light.direction);
 
 			return result;
 		}
@@ -218,14 +315,7 @@ float3 Scene::ShadowRay(unique_ptr<Light> const& light, float3 const& pixelWorld
 
 bool Scene::AddLight(const Light& light)
 {
-	lights.push_back(make_unique<Light>(light));
-
-	return true;
-}
-
-bool Scene::RemoveLight(vector<unique_ptr<Light>>::iterator it)
-{
-	lights.erase(it);
+	lights.push_back(light);
 
 	return true;
 }

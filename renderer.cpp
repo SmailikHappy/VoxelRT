@@ -38,9 +38,7 @@ float3 Tmpl8::Renderer::GetSkyColor(Ray& ray)
 void Renderer::Init()
 {
 	dMousePos = int2{ 0, 0 };
-
-	scene.AddLight(Light::CreatePoint(float3(0.001f, 0.001f, 0.001f), 1.0f, float3(1), 1));
-	scene.AddLight(Light::CreateDirectional(float3(-0.5f, -0.6f, -0.7f), float3(0.7f, 0.85f, 1.0f), 2.0f));
+	scene.LoadLevelFromFile(levelFilepath);
 }
 
 // -----------------------------------------------------------
@@ -86,7 +84,7 @@ void Renderer::UI()
 
 	ImGui::Text( "Mouse hover: %i", r.voxel );
 
-	ImGui::SliderFloat("Camera speed", &camera.speed, 0.0f, 0.02f);
+	ImGui::SliderFloat("Camera speed", &camera.speed, 0.0f, 0.002f, "%.5f");
 	ImGui::SliderFloat("Camera sensivity", &camera.sensitivity, 0.0f, 0.02f);
 
 	ImGui::End();
@@ -94,8 +92,19 @@ void Renderer::UI()
 
 
 
-	const vector<unique_ptr<Light>>& lights = scene.GetLights();
+	vector<Light>& lights = scene.GetLights();
+
 	ImGui::Begin("Scene");
+
+	ImGui::InputText("", levelFilepath, 256);
+
+	if (ImGui::Button("Load level from a file"))
+		scene.LoadLevelFromFile(levelFilepath);
+
+	ImGui::SameLine();
+	
+	if (ImGui::Button("Save level to a file"))
+		scene.SaveLevelToFile(levelFilepath);
 
 	// Visualized light list to operate on lights
 
@@ -111,7 +120,7 @@ void Renderer::UI()
 				ImGui::TableNextRow();
 
 				ImGui::TableSetColumnIndex(0);
-				ImGui::Text(lights.at(row).get()->name);
+				ImGui::Text(lights.at(row).name);
 
 				ImGui::TableSetColumnIndex(1);
 				if (ImGui::Button("Select"))
@@ -142,7 +151,7 @@ void Renderer::UI()
 	bool areOperatingOnSelectedLight = false;
 	if (selectedLightIndex != -1)
 	{
-		Light& selectedLight = *lights.at(selectedLightIndex).get();
+		Light& selectedLight = lights.at(selectedLightIndex);
 		areOperatingOnSelectedLight = true;
 
 		LightType lightType = selectedLight.type;
@@ -165,13 +174,14 @@ void Renderer::UI()
 			break;
 		}
 
-		ImGui::InputText("", lights.at(selectedLightIndex).get()->name, 32);
+		ImGui::InputText("", selectedLight.name, 32);
 		 
 		ImGui::SliderFloat3("Color", (float*) (&selectedLight.color), 0.0f, 1.0f);
 
 		if (lightType == Point || lightType == Spot)
 			ImGui::DragFloat3("Position", (float*)(&selectedLight.pos), 0.001f);
 
+		// Different thing then you think
 		if (lightType == Directional || lightType == Spot)
 			if (ImGui::DragFloat3("Direction", (float*)(&selectedLight.direction), 0.01f, 0.0f, 0.0f, "%.2f"))
 				selectedLight.direction = normalize(selectedLight.direction);

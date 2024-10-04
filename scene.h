@@ -11,6 +11,8 @@
 #define GRIDSIZE2	(GRIDSIZE*GRIDSIZE)
 #define GRIDSIZE3	(GRIDSIZE*GRIDSIZE*GRIDSIZE)
 
+#define MAXLIGHTS	32
+
 // epsilon
 #define EPSILON		0.00001f
 
@@ -27,23 +29,37 @@ public:
 		float3 tdelta;
 		float3 tmax;
 	};
+
+	struct SceneData
+	{
+		unsigned int grid[GRIDSIZE3]; // voxel payload is 'unsigned int', interpretation of the bits is free!
+		Light lights[MAXLIGHTS];
+		unsigned int lightCount;
+	};
+
 	Scene();
+
+	void LoadDefaultLevel();
+	bool LoadLevelFromFile(const char* filepath);
+	bool SaveLevelToFile(const char* filepath);
+
 	void FindNearest( Ray& ray ) const;
 	bool IsOccluded( Ray& ray ) const;
 	void Set( const uint x, const uint y, const uint z, const uint v );
 
 	// RT funstions
-	float3 ShadowRay(unique_ptr<Light> const& light, float3 const& pixelWorldPos, float3 const& pixelNormal) const;
+	float3 ShadowRay(Light const& light, float3 const& pixelWorldPos, float3 const& pixelNormal) const;
 
 	// Managment functions
 	bool AddLight(const Light& light);
-	bool RemoveLight(vector<unique_ptr<Light>>::iterator it);
 	bool RemoveLight(const int id);
 
-	const vector<unique_ptr<Light>>& GetLights() const { return lights; }
-	unsigned int* grid; // voxel payload is 'unsigned int', interpretation of the bits is free!
+	vector<Light>& GetLights() { return lights; }
+
+	vector<Light> lights;
+	uint *grid;
+
 private:
-	vector<unique_ptr<Light>> lights;
 	bool Setup3DDDA( Ray& ray, DDAState& state ) const;
 };
 

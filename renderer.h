@@ -40,6 +40,8 @@ public:
 
 	int selectedLightIndex = -1;
 
+	char levelFilepath[256] = "C:\\Projects\\VoxelRT\\level.bin";
+
 	// RT functions
 	float3 Trace(Ray& ray, int = 0, int = 0, int = 0);
 	float3 GetSkyColor(Ray& ray);
