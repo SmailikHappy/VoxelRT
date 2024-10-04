@@ -304,10 +304,12 @@ float3 Scene::ShadowRay(Light const& light, float3 const& pixelWorldPos, float3 
 	case LightType::Spot:
 
 		printf("We don't support spot light yet");
+		abort();
 		return float3(0.0f);
 		break;
 	default:
 		printf("The light type is unknown");
+		abort();
 		return float3(0.0f);
 		break;
 	}

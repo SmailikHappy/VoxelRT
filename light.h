@@ -5,6 +5,7 @@ enum LightType
 	Point,
 	Directional,
 	Spot,
+	Area,
 	Unknown
 };
 
@@ -20,6 +21,46 @@ struct Light
 	float innerConeAngle = 0.0f;	// for spot only
 	float outerConeAngle = 1.0f;	// for spot only
 	bool isEnabled = true;
+
+	static Light CreatePoint()
+	{
+		Light light;
+		light.type = LightType::Point;
+
+		// All other variables are already on some defaults
+
+		return light;
+	}
+
+	static Light CreateDirectional()
+	{
+		Light light;
+		light.type = LightType::Directional;
+
+		// All other variables are already on some defaults
+
+		return light;
+	}
+
+	static Light CreateSpot()
+	{
+		Light light;
+		light.type = LightType::Spot;
+
+		// All other variables are already on some defaults
+
+		return light;
+	}
+
+	static Light CreateArea()
+	{
+		Light light;
+		light.type = LightType::Area;
+
+		// All other variables are already on some defaults
+
+		return light;
+	}
 
 	static Light CreatePoint(float3 const &_pos, const float _range, float3 const& _color, const float _intensity)
 	{

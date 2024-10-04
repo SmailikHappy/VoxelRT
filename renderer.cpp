@@ -77,12 +77,12 @@ void Renderer::Tick( float deltaTime )
 void Renderer::UI()
 {
 	// ray query on mouse
-	Ray r = camera.GetPrimaryRay( (float)mousePos.x, (float)mousePos.y );
-	scene.FindNearest( r );
+	Ray r = camera.GetPrimaryRay((float)mousePos.x, (float)mousePos.y);
+	scene.FindNearest(r);
 
 	ImGui::Begin("Mouse and camera");
 
-	ImGui::Text( "Mouse hover: %i", r.voxel );
+	ImGui::Text("Mouse hover: %i", r.voxel);
 
 	ImGui::SliderFloat("Camera speed", &camera.speed, 0.0f, 0.002f, "%.5f");
 	ImGui::SliderFloat("Camera sensivity", &camera.sensitivity, 0.0f, 0.02f);
@@ -102,7 +102,7 @@ void Renderer::UI()
 		scene.LoadLevelFromFile(levelFilepath);
 
 	ImGui::SameLine();
-	
+
 	if (ImGui::Button("Save level to a file"))
 		scene.SaveLevelToFile(levelFilepath);
 
@@ -110,7 +110,7 @@ void Renderer::UI()
 
 	if (ImGui::TreeNode("Lights"))
 	{
-		if (ImGui::BeginTable("Lights", 3))
+		if (ImGui::BeginTable("Lights", 4, ImGuiTableFlags_Resizable))
 		{
 			for (int row = 0; row < lights.size(); row++)
 			{
@@ -120,15 +120,18 @@ void Renderer::UI()
 				ImGui::TableNextRow();
 
 				ImGui::TableSetColumnIndex(0);
-				ImGui::Text(lights.at(row).name);
+				ImGui::Checkbox("", &lights.at(row).isEnabled);
 
 				ImGui::TableSetColumnIndex(1);
+				ImGui::Text(lights.at(row).name);
+
+				ImGui::TableSetColumnIndex(2);
 				if (ImGui::Button("Select"))
 				{
 					selectedLightIndex = row;
 				}
 
-				ImGui::TableSetColumnIndex(2);
+				ImGui::TableSetColumnIndex(3);
 				if (ImGui::Button("Delete"))
 				{
 					scene.RemoveLight(row);
@@ -143,9 +146,22 @@ void Renderer::UI()
 		}
 		ImGui::TreePop();
 	}
-	
 
-	ImGui::End();
+	if (ImGui::TreeNode("Create stuff"))
+	{
+		if (ImGui::Button("Create point light"))
+			scene.lights.push_back(Light::CreatePoint());
+
+		if (ImGui::Button("Create directional light"))
+			scene.lights.push_back(Light::CreateDirectional());
+
+		if (ImGui::Button("Create spot light"))
+			scene.lights.push_back(Light::CreateSpot());
+
+		if (ImGui::Button("Create area light"))
+			scene.lights.push_back(Light::CreateArea());
+	}
+	ImGui::End();	// "Scene" window
 
 
 	bool areOperatingOnSelectedLight = false;
