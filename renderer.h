@@ -1,5 +1,9 @@
 #pragma once
 
+#include <vector>
+#include <memory>
+#include "light.h"
+
 namespace Tmpl8
 {
 
@@ -8,7 +12,6 @@ class Renderer : public TheApp
 public:
 	// game flow methods
 	void Init();
-	float3 Trace( Ray& ray, int = 0, int = 0, int = 0 );
 	void Tick( float deltaTime );
 	void UI();
 	void Shutdown() { /* nothing here for now */ }
@@ -36,6 +39,10 @@ public:
 	float3* history;		// for episode 5
 	Scene scene;
 	Camera camera;
+
+	// RT functions
+	float3 Trace(Ray& ray, int = 0, int = 0, int = 0);
+	float3 GetSkyColor(Ray& ray);
 };
 
 } // namespace Tmpl8

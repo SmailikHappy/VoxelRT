@@ -42,7 +42,7 @@ Ray Camera::GetPrimaryRay(const float x, const float y)
 	// - there are far cooler camera models, e.g. try 'Panini projection'.
 }
 
-bool Camera::HandleInput(const float dt, const int2 const& mouseMovement)
+bool Camera::HandleInput(const float dt, const int2& mouseMovement)
 {
 	if (!WindowHasFocus()) return false;
 	

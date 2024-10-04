@@ -1,4 +1,5 @@
 #include "template.h"
+#include "lighthandler.h"
 
 inline float intersect_cube( Ray& ray )
 {
@@ -36,10 +37,17 @@ Scene::Scene()
 			for (int x = 0; x < WORLDSIZE; x++, fx += 1.0f / WORLDSIZE)
 			{
 				const float n = noise3D( fx, fy, fz );
-				Set( x, y, z, n > 0.09f ? 0x020101 * y : 0 );
+				Set( x, y, z, n > 0.09f ? 0xffffff : 0);
 			}
 		}
 	}
+
+	lightHandler = unique_ptr<LightHandler>(new LightHandler(this));
+}
+
+Tmpl8::Scene::~Scene()
+{
+	lightHandler.reset();
 }
 
 void Scene::Set( const uint x, const uint y, const uint z, const uint v )

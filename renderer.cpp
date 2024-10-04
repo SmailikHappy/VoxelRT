@@ -5,12 +5,31 @@
 // -----------------------------------------------------------
 float3 Renderer::Trace( Ray& ray, int, int, int /* we'll use these later */ )
 {
-	scene.FindNearest( ray );
-	if (ray.voxel == 0) return float3( 0 ); // or a fancy sky color
+	scene.FindNearest(ray);
+
+	// Didn't find any voxel
+	if (ray.voxel == 0) return GetSkyColor(ray);
+	
+	// Cancelling if voxel is behind the screen
+	if (ray.t < 0) return GetSkyColor(ray);
+
 	float3 N = ray.GetNormal();
 	float3 I = ray.IntersectionPoint();
 	float3 albedo = ray.GetAlbedo();
-	return (N + 1) * 0.5f;
+
+	float3 result = float3(0.0f);
+
+	for (auto it = scene.lightHandler.get()->GetLights().begin(); it != scene.lightHandler.get()->GetLights().end(); it++)
+	{
+		result += albedo * scene.lightHandler.get()->ShadowRay((*it), I, N);
+	}
+
+	return result;
+}
+
+float3 Tmpl8::Renderer::GetSkyColor(Ray& ray)
+{
+	return float3(0.4235f, 0.7255f, 0.9686f);
 }
 
 // -----------------------------------------------------------
@@ -19,6 +38,9 @@ float3 Renderer::Trace( Ray& ray, int, int, int /* we'll use these later */ )
 void Renderer::Init()
 {
 	dMousePos = int2{ 0, 0 };
+
+	scene.lightHandler.get()->AddLight(Light::CreatePoint(float3(0.001f, 0.001f, 0.001f), 1.0f, float3(1), 1));
+	scene.lightHandler.get()->AddLight(Light::CreateDirectional(float3(-0.5f, -0.6f, -0.7f), float3(0.7f, 0.85f, 1.0f), 2.0f));
 }
 
 // -----------------------------------------------------------
@@ -59,5 +81,31 @@ void Renderer::UI()
 	// ray query on mouse
 	Ray r = camera.GetPrimaryRay( (float)mousePos.x, (float)mousePos.y );
 	scene.FindNearest( r );
+
+	ImGui::Begin("MouseInfo");
 	ImGui::Text( "voxel: %i", r.voxel );
+	ImGui::End();
+
+
+	ImGui::Begin("Scene");
+	ImGui::Text("Lights");
+	if (ImGui::BeginTable("Lights", 3))
+	{
+		for (int row = 0; row < scene.lightHandler.get()->GetLights().size(); row++)
+		{
+			ImGui::TableNextRow();
+			
+			ImGui::TableSetColumnIndex(0);
+			ImGui::Text("Light numero " + row);
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::Text("Light selecto");
+
+			ImGui::TableSetColumnIndex(2);
+			ImGui::Text("Light deleto");
+		}
+
+		ImGui::EndTable();
+	}
+	ImGui::End();
 }

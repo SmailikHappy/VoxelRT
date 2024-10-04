@@ -4,6 +4,9 @@
 // Generated execs' files
 x64/*
 
+// Generated VS files
+.vs/*
+
 // Ignore personally generated UI and camera's info files
 camera.bin
 imgui.ini
