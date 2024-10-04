@@ -32,8 +32,8 @@ public:
 	const float aspect = (float)SCRWIDTH / (float)SCRHEIGHT;
 	float3 camPos, camAhead;
 	float3 topLeft, topRight, bottomLeft;
-	const float sensitivity = 0.01f;
-	const float speed = 0.015f;
+	float sensitivity = 0.01f;
+	float speed = 0.015f;
 };
 
 }

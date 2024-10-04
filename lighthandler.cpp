@@ -15,6 +15,8 @@ float3 LightHandler::ShadowRay(unique_ptr<Light> const& light, float3 const& pix
 		float3 direction = normalize(lightToPixelVector);
 		float rayLength = length(lightToPixelVector);
 
+		if (rayLength > light.get()->range) return float3(0.0f);
+
 		Ray r(light.get()->pos, direction, rayLength);
 
 		if (scene->IsOccluded(r))

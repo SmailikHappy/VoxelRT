@@ -4,12 +4,12 @@ Camera::Camera()
 {
 	// try to load a camera
 	FILE* f = fopen( "camera.bin", "rb" );
-	/*if (f)
+	if (f)
 	{
 		fread( this, 1, sizeof( Camera ), f );
 		fclose( f );
 	}
-	else*/
+	else
 	{
 		// setup a basic view frustum
 		camPos = float3( 0, 0, -2 );
@@ -54,12 +54,12 @@ bool Camera::HandleInput(const float dt, const int2& mouseMovement)
 	
 	bool changed = false;
 	
-	if (IsKeyDown( GLFW_KEY_A )) camPos -= speed * right, changed = true;
-	if (IsKeyDown( GLFW_KEY_D )) camPos += speed * right, changed = true;
-	if (GetAsyncKeyState( 'W' )) camPos += speed * camAhead, changed = true;
-	if (IsKeyDown( GLFW_KEY_S )) camPos -= speed * camAhead, changed = true;
-	if (IsKeyDown( GLFW_KEY_E )) camPos += speed * tmpUp, changed = true;
-	if (IsKeyDown( GLFW_KEY_Q )) camPos -= speed * tmpUp, changed = true;
+	if (IsKeyDown( GLFW_KEY_A )) camPos -= dmove * right, changed = true;
+	if (IsKeyDown( GLFW_KEY_D )) camPos += dmove * right, changed = true;
+	if (GetAsyncKeyState( 'W' )) camPos += dmove * camAhead, changed = true;
+	if (IsKeyDown( GLFW_KEY_S )) camPos -= dmove * camAhead, changed = true;
+	if (IsKeyDown( GLFW_KEY_E )) camPos += dmove * tmpUp, changed = true;
+	if (IsKeyDown( GLFW_KEY_Q )) camPos -= dmove * tmpUp, changed = true;
 	
 	
 	topLeft = camPos + 2 * camAhead - aspect * right + up;

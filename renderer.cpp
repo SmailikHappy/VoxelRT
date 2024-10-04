@@ -82,30 +82,112 @@ void Renderer::UI()
 	Ray r = camera.GetPrimaryRay( (float)mousePos.x, (float)mousePos.y );
 	scene.FindNearest( r );
 
-	ImGui::Begin("MouseInfo");
-	ImGui::Text( "voxel: %i", r.voxel );
+	ImGui::Begin("Mouse and camera");
+
+	ImGui::Text( "Mouse hover: %i", r.voxel );
+
+	ImGui::SliderFloat("Camera speed", &camera.speed, 0.0f, 0.02f);
+	ImGui::SliderFloat("Camera sensivity", &camera.sensitivity, 0.0f, 0.02f);
+
 	ImGui::End();
 
 
+
+
+	const vector<unique_ptr<Light>>& lights = scene.lightHandler.get()->GetLights();
 	ImGui::Begin("Scene");
-	ImGui::Text("Lights");
-	if (ImGui::BeginTable("Lights", 3))
+
+	// Visualized light list to operate on lights
+
+	if (ImGui::TreeNode("Lights"))
 	{
-		for (int row = 0; row < scene.lightHandler.get()->GetLights().size(); row++)
+		if (ImGui::BeginTable("Lights", 3))
 		{
-			ImGui::TableNextRow();
-			
-			ImGui::TableSetColumnIndex(0);
-			ImGui::Text("Light numero " + row);
+			for (int row = 0; row < lights.size(); row++)
+			{
+				ImGui::PushID(row);	// makes all the elements unique per row
+				// Solves the issue with not-working buttons
 
-			ImGui::TableSetColumnIndex(1);
-			ImGui::Text("Light selecto");
+				ImGui::TableNextRow();
 
-			ImGui::TableSetColumnIndex(2);
-			ImGui::Text("Light deleto");
+				ImGui::TableSetColumnIndex(0);
+				ImGui::Text(lights.at(row).get()->name);
+
+				ImGui::TableSetColumnIndex(1);
+				if (ImGui::Button("Select"))
+				{
+					selectedLightIndex = row;
+				}
+
+				ImGui::TableSetColumnIndex(2);
+				if (ImGui::Button("Delete"))
+				{
+					scene.lightHandler.get()->RemoveLight(row);
+
+					if (selectedLightIndex == row) selectedLightIndex = -1;
+					if (selectedLightIndex > row) selectedLightIndex -= 1;
+				}
+
+				ImGui::PopID();
+			}
+			ImGui::EndTable();
+		}
+		ImGui::TreePop();
+	}
+	
+
+	ImGui::End();
+
+
+	bool areOperatingOnSelectedLight = false;
+	if (selectedLightIndex != -1)
+	{
+		areOperatingOnSelectedLight = true;
+
+		LightType lightType = lights.at(selectedLightIndex).get()->type;
+
+		ImGui::Begin("Selected light", &areOperatingOnSelectedLight);
+
+		switch (lightType)
+		{
+		case Point:
+			ImGui::Text("Point");
+			break;
+		case Directional:
+			ImGui::Text("Directional");
+			break;
+		case Spot:
+			ImGui::Text("Spot");
+			break;
+		default:
+			ImGui::Text("The light type is unknown!!");
+			break;
 		}
 
-		ImGui::EndTable();
+		ImGui::InputText("", lights.at(selectedLightIndex).get()->name, 32);
+
+		ImGui::SliderFloat3("Color", (float*)(&lights.at(selectedLightIndex).get()->color), 0.0f, 1.0f);
+
+		if (lightType == Point || lightType == Spot)
+			ImGui::DragFloat3("Position", (float*)(&lights.at(selectedLightIndex).get()->pos), 0.001f);
+
+		if (lightType == Directional || lightType == Spot)
+			if (ImGui::DragFloat3("Direction", (float*)(&lights.at(selectedLightIndex).get()->direction), 0.01f, 0.0f, 0.0f, "%.2f"))
+				lights.at(selectedLightIndex).get()->direction = normalize(lights.at(selectedLightIndex).get()->direction);
+
+		if (lightType == Spot)
+		{
+			ImGui::DragFloat("Inner cone cos angle", (&lights.at(selectedLightIndex).get()->innerConeAngle));
+			ImGui::DragFloat("Outer cone cos angle", (&lights.at(selectedLightIndex).get()->outerConeAngle));
+		}
+
+		ImGui::DragFloat("Intensity", (&lights.at(selectedLightIndex).get()->intensity), 0.001f);
+
+		if (lightType == Spot || lightType == Point)
+			ImGui::DragFloat("Range", (&lights.at(selectedLightIndex).get()->range), 0.001f);
+
+		ImGui::End();
 	}
-	ImGui::End();
+
+	if (!areOperatingOnSelectedLight) selectedLightIndex = -1;
 }

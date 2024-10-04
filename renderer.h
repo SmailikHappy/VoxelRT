@@ -35,10 +35,10 @@ public:
 	// data members
 	int2 mousePos;
 	int2 dMousePos;
-	float3* accumulator;	// for episode 3
-	float3* history;		// for episode 5
 	Scene scene;
 	Camera camera;
+
+	int selectedLightIndex = -1;
 
 	// RT functions
 	float3 Trace(Ray& ray, int = 0, int = 0, int = 0);

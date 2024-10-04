@@ -11,6 +11,7 @@ enum LightType
 struct Light
 {
 	LightType type = LightType::Unknown;
+	char name[32] = "name";
 	float3 pos = float3(0.0f, 0.0f, 0.0f);
 	float3 direction = float3(0.0f, 0.0f, 1.0f);
 	float range = 1.0f;

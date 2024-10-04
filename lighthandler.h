@@ -26,7 +26,7 @@ private:
 
 	LightHandler(Tmpl8::Scene* scene_) : scene(scene_) {}
 
+	// Using raw pointer to avoid extra deconstruct-call of class Scene when LightHandler gets destroyed
 	Tmpl8::Scene* scene;
 	vector<unique_ptr<Light>> lights;
 };
-
