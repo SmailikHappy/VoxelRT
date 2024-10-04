@@ -19,9 +19,9 @@ float3 Renderer::Trace( Ray& ray, int, int, int /* we'll use these later */ )
 
 	float3 result = float3(0.0f);
 
-	for (auto it = scene.lightHandler.get()->GetLights().begin(); it != scene.lightHandler.get()->GetLights().end(); it++)
+	for (auto it = scene.GetLights().begin(); it != scene.GetLights().end(); it++)
 	{
-		result += albedo * scene.lightHandler.get()->ShadowRay((*it), I, N);
+		result += albedo * scene.ShadowRay((*it), I, N);
 	}
 
 	return result;
@@ -39,8 +39,8 @@ void Renderer::Init()
 {
 	dMousePos = int2{ 0, 0 };
 
-	scene.lightHandler.get()->AddLight(Light::CreatePoint(float3(0.001f, 0.001f, 0.001f), 1.0f, float3(1), 1));
-	scene.lightHandler.get()->AddLight(Light::CreateDirectional(float3(-0.5f, -0.6f, -0.7f), float3(0.7f, 0.85f, 1.0f), 2.0f));
+	scene.AddLight(Light::CreatePoint(float3(0.001f, 0.001f, 0.001f), 1.0f, float3(1), 1));
+	scene.AddLight(Light::CreateDirectional(float3(-0.5f, -0.6f, -0.7f), float3(0.7f, 0.85f, 1.0f), 2.0f));
 }
 
 // -----------------------------------------------------------
@@ -94,7 +94,7 @@ void Renderer::UI()
 
 
 
-	const vector<unique_ptr<Light>>& lights = scene.lightHandler.get()->GetLights();
+	const vector<unique_ptr<Light>>& lights = scene.GetLights();
 	ImGui::Begin("Scene");
 
 	// Visualized light list to operate on lights
@@ -122,7 +122,7 @@ void Renderer::UI()
 				ImGui::TableSetColumnIndex(2);
 				if (ImGui::Button("Delete"))
 				{
-					scene.lightHandler.get()->RemoveLight(row);
+					scene.RemoveLight(row);
 
 					if (selectedLightIndex == row) selectedLightIndex = -1;
 					if (selectedLightIndex > row) selectedLightIndex -= 1;
@@ -142,9 +142,10 @@ void Renderer::UI()
 	bool areOperatingOnSelectedLight = false;
 	if (selectedLightIndex != -1)
 	{
+		Light& selectedLight = *lights.at(selectedLightIndex).get();
 		areOperatingOnSelectedLight = true;
 
-		LightType lightType = lights.at(selectedLightIndex).get()->type;
+		LightType lightType = selectedLight.type;
 
 		ImGui::Begin("Selected light", &areOperatingOnSelectedLight);
 
@@ -165,26 +166,26 @@ void Renderer::UI()
 		}
 
 		ImGui::InputText("", lights.at(selectedLightIndex).get()->name, 32);
-
-		ImGui::SliderFloat3("Color", (float*)(&lights.at(selectedLightIndex).get()->color), 0.0f, 1.0f);
+		 
+		ImGui::SliderFloat3("Color", (float*) (&selectedLight.color), 0.0f, 1.0f);
 
 		if (lightType == Point || lightType == Spot)
-			ImGui::DragFloat3("Position", (float*)(&lights.at(selectedLightIndex).get()->pos), 0.001f);
+			ImGui::DragFloat3("Position", (float*)(&selectedLight.pos), 0.001f);
 
 		if (lightType == Directional || lightType == Spot)
-			if (ImGui::DragFloat3("Direction", (float*)(&lights.at(selectedLightIndex).get()->direction), 0.01f, 0.0f, 0.0f, "%.2f"))
-				lights.at(selectedLightIndex).get()->direction = normalize(lights.at(selectedLightIndex).get()->direction);
+			if (ImGui::DragFloat3("Direction", (float*)(&selectedLight.direction), 0.01f, 0.0f, 0.0f, "%.2f"))
+				selectedLight.direction = normalize(selectedLight.direction);
 
 		if (lightType == Spot)
 		{
-			ImGui::DragFloat("Inner cone cos angle", (&lights.at(selectedLightIndex).get()->innerConeAngle));
-			ImGui::DragFloat("Outer cone cos angle", (&lights.at(selectedLightIndex).get()->outerConeAngle));
+			ImGui::DragFloat("Inner cone cos angle", (&selectedLight.innerConeAngle));
+			ImGui::DragFloat("Outer cone cos angle", (&selectedLight.outerConeAngle));
 		}
 
-		ImGui::DragFloat("Intensity", (&lights.at(selectedLightIndex).get()->intensity), 0.001f);
+		ImGui::DragFloat("Intensity", (&selectedLight.intensity), 0.001f);
 
 		if (lightType == Spot || lightType == Point)
-			ImGui::DragFloat("Range", (&lights.at(selectedLightIndex).get()->range), 0.001f);
+			ImGui::DragFloat("Range", (&selectedLight.range), 0.001f);
 
 		ImGui::End();
 	}
