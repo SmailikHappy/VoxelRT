@@ -112,12 +112,12 @@ void main()
 	glfwWindowHint( GLFW_STENCIL_BITS, GL_FALSE );
 	glfwWindowHint( GLFW_RESIZABLE, GL_FALSE /* easier :) */ );
 #ifdef FULLSCREEN
-	window = glfwCreateWindow( SCRWIDTH, SCRHEIGHT, "Tmpl8RT", glfwGetPrimaryMonitor(), 0 );
+	window = glfwCreateWindow( WINWIDTH, WINHEIGHT, "Tmpl8RT", glfwGetPrimaryMonitor(), 0 );
 #else
 #ifdef DOUBLESIZE
-	window = glfwCreateWindow( SCRWIDTH * 2, SCRHEIGHT * 2, "Tmpl8RT", 0, 0 );
+	window = glfwCreateWindow( WINWIDTH, WINHEIGHT, "Tmpl8RT", 0, 0 );
 #else
-	window = glfwCreateWindow( SCRWIDTH, SCRHEIGHT, "Tmpl8RT", 0, 0 );
+	window = glfwCreateWindow( WINWIDTH, WINHEIGHT, "Tmpl8RT", 0, 0 );
 #endif
 #endif
 	if (!window) FatalError( "glfwCreateWindow failed." );
@@ -137,7 +137,7 @@ void main()
 	glDisable( GL_DEPTH_TEST );
 	glDisable( GL_CULL_FACE );
 	glDisable( GL_BLEND );
-	glViewport( 0, 0, SCRWIDTH, SCRHEIGHT );
+	glViewport( 0, 0, WINWIDTH, WINHEIGHT );
 	CheckGL();
 	char* vendor = (char*)glGetString( GL_VENDOR );
 	char* renderer = (char*)glGetString( GL_RENDERER );
@@ -158,8 +158,8 @@ void main()
 	glfwShowWindow( window );
 #endif
 	// initialize application
-	InitRenderTarget( SCRWIDTH, SCRHEIGHT );
-	Surface* screen = new Surface( SCRWIDTH, SCRHEIGHT );
+	InitRenderTarget( RENDERWIDTH, RENDERHEIGHT );
+	Surface* screen = new Surface(RENDERWIDTH, RENDERHEIGHT);
 	app = new Renderer();
 #if 0
 	// deserizalize

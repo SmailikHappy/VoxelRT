@@ -10,8 +10,6 @@
 
 #else
 
-#define SCRWIDTH	640
-#define SCRHEIGHT	400
 
 #endif 
 
@@ -29,7 +27,7 @@ public:
 	Ray GetPrimaryRay(const float x, const float y);
 	bool HandleInput(const float dt, const int2& mouseMovement);
 
-	const float aspect = (float)SCRWIDTH / (float)SCRHEIGHT;
+	const float aspect = (float)RENDERWIDTH / (float)RENDERHEIGHT;
 	float3 camPos, camAhead;
 	float3 topLeft, topRight, bottomLeft;
 	float sensitivity = 0.01f;

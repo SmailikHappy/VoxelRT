@@ -56,21 +56,21 @@ void Renderer::Tick( float deltaTime )
 	Timer t;
 	// pixel loop: lines are executed as OpenMP parallel tasks (disabled in DEBUG)
 #pragma omp parallel for schedule(dynamic)
-	for (int y = 0; y < SCRHEIGHT; y++)
+	for (int y = 0; y < RENDERHEIGHT; y++)
 	{
 		// trace a primary ray for each pixel on the line
-		for (int x = 0; x < SCRWIDTH; x++)
+		for (int x = 0; x < RENDERWIDTH; x++)
 		{
 			Ray r = camera.GetPrimaryRay( (float)x, (float)y );
 			float3 pixel = Trace( r );
-			screen->pixels[x + y * SCRWIDTH] = RGBF32_to_RGB8( pixel );
+			screen->pixels[x + y * RENDERWIDTH] = RGBF32_to_RGB8( pixel );
 		}
 	}
 	// performance report - running average - ms, MRays/s
 	static float avg = 10, alpha = 1;
 	avg = (1 - alpha) * avg + alpha * t.elapsed() * 1000;
 	if (alpha > 0.05f) alpha *= 0.5f;
-	float fps = 1000.0f / avg, rps = (SCRWIDTH * SCRHEIGHT) / avg;
+	float fps = 1000.0f / avg, rps = (RENDERWIDTH * RENDERHEIGHT) / avg;
 	printf( "%5.2fms (%.1ffps) - %.1fMrays/s\n", avg, fps, rps / 1000 );
 	// handle user input
 	camera.HandleInput( deltaTime, dMousePos );
@@ -82,9 +82,8 @@ void Renderer::Tick( float deltaTime )
 // -----------------------------------------------------------
 void Renderer::UI()
 {
-	ImGui::Begin("Yes");
-	ImGui::Image(GetRenderTargetPointer(), ImVec2(SCRWIDTH, SCRHEIGHT));
-	ImGui::Text("something");
+	ImGui::Begin("Viewport");
+	ImGui::Image(GetRenderTargetPointer(), ImVec2(RENDERWIDTH, RENDERHEIGHT));
 	ImGui::End();
 
 	// ray query on mouse

@@ -31,8 +31,8 @@ Camera::~Camera()
 Ray Camera::GetPrimaryRay(const float x, const float y)
 {
 	// calculate pixel position on virtual screen plane
-	const float u = (float)x * (1.0f / SCRWIDTH);
-	const float v = (float)y * (1.0f / SCRHEIGHT);
+	const float u = (float)x * (1.0f / RENDERWIDTH);
+	const float v = (float)y * (1.0f / RENDERHEIGHT);
 	const float3 P = topLeft + u * (topRight - topLeft) + v * (bottomLeft - topLeft);
 	// return Ray( camPos, normalize( P - camPos ) );
 	return Ray( camPos, P - camPos );
