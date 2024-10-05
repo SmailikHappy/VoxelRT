@@ -59,7 +59,7 @@ bool Scene::LoadLevelFromFile(const char* filepath)
 {
 	// Loading a level from a file
 	FILE* f = fopen(filepath, "rb");
-	
+
 	// Moving some data to heap for effiecency and to save stack
 	SceneData* data = new SceneData();
 
@@ -74,6 +74,12 @@ bool Scene::LoadLevelFromFile(const char* filepath)
 		LoadDefaultLevel();
 		delete data;
 		return false;
+	}
+
+	materials.clear();
+	for (uint i = 0; i < data->materialCount; i++)
+	{
+		materials[data->keysForMaterials[i]] = data->materials[i];
 	}
 
 	memset(grid, 0, GRIDSIZE3 * sizeof(unsigned short));
@@ -130,6 +136,22 @@ bool Scene::SaveLevelToFile(const char* filepath)
 		for (uint i = 0; i < data->lightCount; i++)
 		{
 			data->lights[i] = lights.at(i);
+		}
+
+		data->materialCount = static_cast<unsigned int>(materials.size());
+		
+		if (data->materialCount > MAXMATERIALS)
+		{
+			printf("Material count is exceeding, not all the materials will be saved");
+			data->materialCount = MAXMATERIALS;
+		}
+
+		auto it = materials.begin();
+
+		for (uint i = 0; i < data->materialCount; i++, it++)
+		{
+			data->keysForMaterials[i] = it->first;
+			data->materials[i] = it->second;
 		}
 
 		fwrite(data, 1, sizeof(SceneData), f);

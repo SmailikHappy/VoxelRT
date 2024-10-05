@@ -26,6 +26,7 @@ struct Light
 	{
 		Light light;
 		light.type = LightType::Point;
+		strcpy(light.name, "Point light source");
 
 		// All other variables are already on some defaults
 
@@ -36,6 +37,8 @@ struct Light
 	{
 		Light light;
 		light.type = LightType::Directional;
+		strcpy(light.name, "Directional light source");
+
 
 		// All other variables are already on some defaults
 
@@ -46,6 +49,7 @@ struct Light
 	{
 		Light light;
 		light.type = LightType::Spot;
+		strcpy(light.name, "Spot light source");
 
 		// All other variables are already on some defaults
 
@@ -56,6 +60,7 @@ struct Light
 	{
 		Light light;
 		light.type = LightType::Area;
+		strcpy(light.name, "Area light source");
 
 		// All other variables are already on some defaults
 

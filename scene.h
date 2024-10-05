@@ -41,6 +41,7 @@ public:
 		Light lights[MAXLIGHTS];
 		unsigned int lightCount;
 		Material materials[MAXMATERIALS];
+		unsigned short keysForMaterials[MAXMATERIALS];
 		unsigned int materialCount;
 	};
 
@@ -71,8 +72,6 @@ public:
 
 	// grid contains key to a material in a map of materials;
 	unsigned short *grid;
-
-	//uint *grid;
 
 private:
 	bool Setup3DDDA( Ray& ray, DDAState& state ) const;

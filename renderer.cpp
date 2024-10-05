@@ -112,8 +112,6 @@ void Renderer::UI()
 	if (ImGui::Button("Save level to a file"))
 		scene.SaveLevelToFile(levelFilepath);
 
-	// Visualized light list to operate on lights
-
 	if (ImGui::TreeNode("Lights"))
 	{
 		if (ImGui::BeginTable("Lights", 4, ImGuiTableFlags_Resizable))
@@ -194,16 +192,22 @@ void Renderer::UI()
 
 	if (ImGui::TreeNode("Create stuff"))
 	{
-		if (ImGui::Button("Create point light"))
+		ImGui::Text("Create light source: ");
+
+		ImGui::SameLine();
+		if (ImGui::Button("Point"))
 			scene.lights.push_back(Light::CreatePoint());
 
-		if (ImGui::Button("Create directional light"))
+		ImGui::SameLine();
+		if (ImGui::Button("Directional"))
 			scene.lights.push_back(Light::CreateDirectional());
 
-		if (ImGui::Button("Create spot light"))
+		ImGui::SameLine();
+		if (ImGui::Button("Spot"))
 			scene.lights.push_back(Light::CreateSpot());
 
-		if (ImGui::Button("Create area light"))
+		ImGui::SameLine();
+		if (ImGui::Button("Area"))
 			scene.lights.push_back(Light::CreateArea());
 	}
 	ImGui::End();	// "Scene" window
