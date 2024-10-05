@@ -157,6 +157,7 @@ struct Timer
 // forward declaration of helper functions
 void FatalError( const char* fmt, ... );
 bool FileIsNewer( const char* file1, const char* file2 );
+void* GetRenderTargetPointer();
 bool FileExists( const char* f );
 bool RemoveFile( const char* f );
 string TextFileRead( const char* _File );

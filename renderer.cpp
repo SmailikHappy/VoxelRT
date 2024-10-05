@@ -82,6 +82,11 @@ void Renderer::Tick( float deltaTime )
 // -----------------------------------------------------------
 void Renderer::UI()
 {
+	ImGui::Begin("Yes");
+	ImGui::Image(GetRenderTargetPointer(), ImVec2(SCRWIDTH, SCRHEIGHT));
+	ImGui::Text("something");
+	ImGui::End();
+
 	// ray query on mouse
 	Ray r = camera.GetPrimaryRay((float)mousePos.x, (float)mousePos.y);
 	scene.FindNearest(r);
