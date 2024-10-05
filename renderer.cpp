@@ -8,14 +8,20 @@ float3 Renderer::Trace( Ray& ray, int, int, int /* we'll use these later */ )
 	scene.FindNearest(ray);
 
 	// Didn't find any voxel
-	if (ray.voxel == 0) return GetSkyColor(ray);
+	if (ray.voxelKey == NOMATERIALKEY) return GetSkyColor(ray);
 	
 	// Cancelling if voxel is behind the screen
 	if (ray.t < 0) return GetSkyColor(ray);
 
 	float3 N = ray.GetNormal();
 	float3 I = ray.IntersectionPoint();
-	float3 albedo = ray.GetAlbedo();
+
+	bool isKeyValid = false;
+	const Material& material = scene.GetMaterialByKey(ray.voxelKey, isKeyValid);
+
+	//if (!isKeyValid) Do smth
+
+	float3 albedo = material.albedo;
 
 	float3 result = float3(0.0f);
 
@@ -38,7 +44,7 @@ float3 Tmpl8::Renderer::GetSkyColor(Ray& ray)
 void Renderer::Init()
 {
 	dMousePos = int2{ 0, 0 };
-	scene.LoadLevelFromFile(levelFilepath);
+	//scene.LoadLevelFromFile(levelFilepath);
 }
 
 // -----------------------------------------------------------
@@ -82,7 +88,7 @@ void Renderer::UI()
 
 	ImGui::Begin("Mouse and camera");
 
-	ImGui::Text("Mouse hover: %i", r.voxel);
+	ImGui::Text("Mouse hover: %i", r.voxelKey);
 
 	ImGui::SliderFloat("Camera speed", &camera.speed, 0.0f, 0.002f, "%.5f");
 	ImGui::SliderFloat("Camera sensivity", &camera.sensitivity, 0.0f, 0.02f);
@@ -147,6 +153,45 @@ void Renderer::UI()
 		ImGui::TreePop();
 	}
 
+	if (ImGui::TreeNode("Materials"))
+	{
+		if (ImGui::BeginTable("Materials", 3, ImGuiTableFlags_Resizable))
+		{
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::Text("Albedo");
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::Text("Metalic");
+
+			ImGui::TableSetColumnIndex(2);
+			ImGui::Text("Roughness");
+
+			auto& materials = scene.GetMaterials();
+
+			for (auto it = materials.begin(); it != materials.end(); it++)
+			{
+				ImGui::TableNextRow();
+				Material& material = it->second;
+
+				ImGui::PushID(0); // Just something unique
+
+				ImGui::TableSetColumnIndex(0);
+				ImGui::ColorEdit3("", (float*) &material.albedo);
+
+				ImGui::TableSetColumnIndex(1);
+				ImGui::SliderFloat("", &material.metallic, 0.0f, 1.0f);
+
+				ImGui::TableSetColumnIndex(2);
+				ImGui::SliderFloat("", &material.roughness, 0.0f, 1.0f);
+
+				ImGui::PopID();
+			}			
+			ImGui::EndTable();
+		}
+		ImGui::TreePop();
+	}
+
 	if (ImGui::TreeNode("Create stuff"))
 	{
 		if (ImGui::Button("Create point light"))
@@ -192,7 +237,7 @@ void Renderer::UI()
 
 		ImGui::InputText("", selectedLight.name, 32);
 		 
-		ImGui::SliderFloat3("Color", (float*) (&selectedLight.color), 0.0f, 1.0f);
+		ImGui::ColorEdit3("Color", (float*) (&selectedLight.color));
 
 		if (lightType == Point || lightType == Spot)
 			ImGui::DragFloat3("Position", (float*)(&selectedLight.pos), 0.001f);

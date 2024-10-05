@@ -22,15 +22,22 @@ inline bool point_in_cube( const float3& pos )
 
 Scene::Scene()
 {
-	grid = (uint*)MALLOC64(GRIDSIZE3 * sizeof(uint));
-	memset(grid, 0, GRIDSIZE3 * sizeof(uint));
-	//LoadDefaultLevel();
+	// Generate an emty grid
+	grid = (unsigned short*)MALLOC64(GRIDSIZE3 * sizeof(unsigned short));
+	memset(grid, 0, GRIDSIZE3 * sizeof(unsigned short));
+
+	LoadDefaultLevel();
 }
 
-void Tmpl8::Scene::LoadDefaultLevel()
-{
-	// allocate room for the world
-	
+void Scene::LoadDefaultLevel()
+{	
+	// Creating a basic material of our level
+	materials[1] = Material(
+		float3(0.9f, 0.9f, 0.9f),
+		0.0f, 
+		1.0f
+	);
+
 	// initialize the scene using Perlin noise, parallel over z
 #pragma omp parallel for schedule(dynamic)
 	for (int z = 0; z < WORLDSIZE; z++)
@@ -42,13 +49,13 @@ void Tmpl8::Scene::LoadDefaultLevel()
 			for (int x = 0; x < WORLDSIZE; x++, fx += 1.0f / WORLDSIZE)
 			{
 				const float n = noise3D(fx, fy, fz);
-				Set(x, y, z, n > 0.09f ? 0xffffff : 0);
+				SetMaterial(x, y, z, n > 0.09f ? 1 : NOMATERIALKEY);
 			}
 		}
 	}
 }
 
-bool Tmpl8::Scene::LoadLevelFromFile(const char* filepath)
+bool Scene::LoadLevelFromFile(const char* filepath)
 {
 	// Loading a level from a file
 	FILE* f = fopen(filepath, "rb");
@@ -69,7 +76,7 @@ bool Tmpl8::Scene::LoadLevelFromFile(const char* filepath)
 		return false;
 	}
 
-	memset(grid, 0, GRIDSIZE3 * sizeof(uint));
+	memset(grid, 0, GRIDSIZE3 * sizeof(unsigned short));
 
 	// Let's not do it using memset, just afraid of doing something wrong
 #pragma omp parallel for schedule(dynamic)
@@ -79,7 +86,7 @@ bool Tmpl8::Scene::LoadLevelFromFile(const char* filepath)
 		{
 			for (int x = 0; x < WORLDSIZE; x++)
 			{
-				Set(x, y, z, data->grid[x + y * GRIDSIZE + z * GRIDSIZE2]);
+				SetMaterial(x, y, z, data->grid[x + y * GRIDSIZE + z * GRIDSIZE2]);
 			}
 		}
 	}
@@ -95,7 +102,7 @@ bool Tmpl8::Scene::LoadLevelFromFile(const char* filepath)
 	return true;
 }
 
-bool Tmpl8::Scene::SaveLevelToFile(const char* filepath)
+bool Scene::SaveLevelToFile(const char* filepath)
 {
 	// Save a level to the file
 	FILE* f = fopen(filepath, "wb");
@@ -139,11 +146,11 @@ bool Tmpl8::Scene::SaveLevelToFile(const char* filepath)
 	}
 }
 
-
-void Scene::Set( const uint x, const uint y, const uint z, const uint v )
+void Scene::SetMaterial( const uint x, const uint y, const uint z, const unsigned short materialKey)
 {
-	grid[x + y * GRIDSIZE + z * GRIDSIZE2] = v;
+	grid[x + y * GRIDSIZE + z * GRIDSIZE2] = materialKey;
 }
+
 
 bool Scene::Setup3DDDA( Ray& ray, DDAState& state ) const
 {
@@ -178,15 +185,16 @@ void Scene::FindNearest( Ray& ray ) const
 	// setup Amanatides & Woo grid traversal
 	DDAState s;
 	if (!Setup3DDDA( ray, s )) return;
-	uint cell, lastCell = 0, axis = ray.axis;
+	//uint cell, lastCell = 0, axis = ray.axis;
+	unsigned short cellKey, lastCellKey = NOMATERIALKEY, axis = ray.axis;
 	if (ray.inside)
 	{
 		// start stepping until we find an empty voxel
 		while (1)
 		{
-			cell = grid[s.X + s.Y * GRIDSIZE + s.Z * GRIDSIZE2];
-			if (!cell) break;
-			lastCell = cell;
+			cellKey = grid[s.X + s.Y * GRIDSIZE + s.Z * GRIDSIZE2];
+			if (cellKey == NOMATERIALKEY) break;
+			lastCellKey = cellKey;
 			if (s.tmax.x < s.tmax.y)
 			{
 				if (s.tmax.x < s.tmax.z) { s.t = s.tmax.x, s.X += s.step.x, axis = 0; if (s.X >= GRIDSIZE) break; s.tmax.x += s.tdelta.x; }
@@ -198,15 +206,16 @@ void Scene::FindNearest( Ray& ray ) const
 				else { s.t = s.tmax.z, s.Z += s.step.z, axis = 2; if (s.Z >= GRIDSIZE) break; s.tmax.z += s.tdelta.z; }
 			}
 		}
-		ray.voxel = lastCell; // we store the voxel we just left
+		ray.voxelKey = lastCellKey; // we store the voxel we just left
 	}
 	else
 	{
 		// start stepping until we find a filled voxel
 		while (1)
 		{
-			cell = grid[s.X + s.Y * GRIDSIZE + s.Z * GRIDSIZE2];
-			if (cell) break; else if (s.tmax.x < s.tmax.y)
+			cellKey = grid[s.X + s.Y * GRIDSIZE + s.Z * GRIDSIZE2];
+			if (cellKey != NOMATERIALKEY) break;
+			else if (s.tmax.x < s.tmax.y)
 			{
 				if (s.tmax.x < s.tmax.z) { s.t = s.tmax.x, s.X += s.step.x, axis = 0; if (s.X >= GRIDSIZE) break; s.tmax.x += s.tdelta.x; }
 				else { s.t = s.tmax.z, s.Z += s.step.z, axis = 2; if (s.Z >= GRIDSIZE) break; s.tmax.z += s.tdelta.z; }
@@ -217,7 +226,7 @@ void Scene::FindNearest( Ray& ray ) const
 				else { s.t = s.tmax.z, s.Z += s.step.z, axis = 2; if (s.Z >= GRIDSIZE) break; s.tmax.z += s.tdelta.z; }
 			}
 		}
-		ray.voxel = cell;
+		ray.voxelKey = cellKey;
 	}
 	ray.t = s.t;
 	ray.axis = axis;
@@ -327,4 +336,17 @@ bool Scene::RemoveLight(const int id)
 	lights.erase(lights.begin() + id);
 
 	return true;
+}
+
+const Material& Tmpl8::Scene::GetMaterialByKey(unsigned short key, bool& isKeyValid)
+{
+	// Shoot ourselves for such a hillarious mistake
+	if (key == NOMATERIALKEY) abort();
+
+	auto it = materials.find(key);
+	bool materialWasNotFound = it == materials.end();
+	if (materialWasNotFound) { isKeyValid = false; return defaultMaterial; }
+
+	isKeyValid = true;
+	return it->second;
 }

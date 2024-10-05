@@ -1,7 +1,7 @@
 #include "template.h"
 
 Ray::Ray( const float3 origin, const float3 direction, const float rayLength, const uint rgb )
-	: O( origin ), D( normalize( direction ) ), t( rayLength ), voxel( rgb )
+	: O( origin ), D( normalize( direction ) ), t( rayLength ), voxelKey(NOMATERIALKEY)
 {
 	// calculate reciprocal ray direction for triangles and AABBs
 	// TODO: prevent NaNs - or don't
@@ -23,9 +23,9 @@ float3 Ray::GetNormal() const
 	const float3 sign = Dsign * 2 - 1;
 	return float3( axis == 0 ? sign.x : 0, axis == 1 ? sign.y : 0, axis == 2 ? sign.z : 0 );
 }
-
-float3 Ray::GetAlbedo() const
-{
-	// return the (floating point) albedo at the nearest intersection
-	return RGB8_to_RGBF32( voxel );
-}
+//
+//float3 Ray::GetAlbedo() const
+//{
+//	// return the (floating point) albedo at the nearest intersection
+//	return RGB8_to_RGBF32( voxel );
+//}

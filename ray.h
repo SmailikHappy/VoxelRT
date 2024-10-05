@@ -18,7 +18,7 @@ public:
 	float3 D;					// ray direction
 	float t;					// ray length
 	float3 Dsign;				// inverted ray direction signs, -1 or 1
-	uint voxel;					// payload of the intersected voxel
+	unsigned short voxelKey;	// payload of the intersected voxel
 	uint axis = 0;				// axis of last plane passed by the ray
 	bool inside = false;		// if true, ray started in voxel and t is at exit point
 private:

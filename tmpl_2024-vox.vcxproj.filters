@@ -42,6 +42,7 @@
     <ClCompile Include="ray.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="light.cpp" />
+    <ClCompile Include="material.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.h" />
@@ -94,6 +95,7 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="light.h" />
+    <ClInclude Include="material.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="template">
