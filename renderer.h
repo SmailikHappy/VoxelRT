@@ -1,5 +1,7 @@
 #pragma once
 
+#define MAXRAYSTEPS 2
+
 #include <vector>
 #include <memory>
 #include "light.h"
@@ -43,7 +45,7 @@ public:
 	char levelFilepath[256] = "C:\\Projects\\VoxelRT\\level.bin";
 
 	// RT functions
-	float3 Trace(Ray& ray, int = 0, int = 0, int = 0);
+	float3 Trace(Ray& ray, int rayStep);
 	float3 GetSkyColor(Ray& ray);
 };
 

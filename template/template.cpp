@@ -409,7 +409,7 @@ bool FileIsNewer( const char* file1, const char* file2 )
 
 void* GetRenderTargetPointer()
 {
-	return (void*) renderTarget->ID;
+	return (void*)((size_t)renderTarget->ID);
 }
 
 bool FileExists( const char* f )

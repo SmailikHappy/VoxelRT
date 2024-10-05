@@ -3,7 +3,7 @@
 // -----------------------------------------------------------
 // Calculate light transport via a ray
 // -----------------------------------------------------------
-float3 Renderer::Trace( Ray& ray, int, int, int /* we'll use these later */ )
+float3 Renderer::Trace(Ray& ray, int rayStep)
 {
 	scene.FindNearest(ray);
 
@@ -13,7 +13,7 @@ float3 Renderer::Trace( Ray& ray, int, int, int /* we'll use these later */ )
 	// Cancelling if voxel is behind the screen
 	if (ray.t < 0) return GetSkyColor(ray);
 
-	float3 N = ray.GetNormal();
+	float3 N = normalize(ray.GetNormal());
 	float3 I = ray.IntersectionPoint();
 
 	bool isKeyValid = false;
@@ -30,7 +30,13 @@ float3 Renderer::Trace( Ray& ray, int, int, int /* we'll use these later */ )
 		result += albedo * scene.ShadowRay((*it), I, N);
 	}
 
-	return result;
+	if (rayStep >= MAXRAYSTEPS)	return result;
+
+	float3 newDirection = 2 * dot(-normalize(ray.D), N) * N + ray.D;
+
+	Ray newRay(I + newDirection * 0.0001f, newDirection);
+
+	return 0.8f * result + 0.2f * Trace(newRay, ++rayStep);
 }
 
 float3 Tmpl8::Renderer::GetSkyColor(Ray& ray)
@@ -62,7 +68,7 @@ void Renderer::Tick( float deltaTime )
 		for (int x = 0; x < RENDERWIDTH; x++)
 		{
 			Ray r = camera.GetPrimaryRay( (float)x, (float)y );
-			float3 pixel = Trace( r );
+			float3 pixel = Trace(r, 0);
 			screen->pixels[x + y * RENDERWIDTH] = RGBF32_to_RGB8( pixel );
 		}
 	}
@@ -109,7 +115,10 @@ void Renderer::UI()
 	ImGui::InputText("", levelFilepath, 256);
 
 	if (ImGui::Button("Load level from a file"))
+	{
 		scene.LoadLevelFromFile(levelFilepath);
+		selectedLightIndex = -1;
+	}
 
 	ImGui::SameLine();
 
