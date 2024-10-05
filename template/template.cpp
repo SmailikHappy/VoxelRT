@@ -3,6 +3,7 @@
 // IGAD/NHTV/BUAS/UU - Jacco Bikker - 2006-2023
 
 #include "template.h"
+#include <stb_image.h>
 
 #pragma comment( linker, "/subsystem:windows /ENTRY:mainCRTStartup" )
 
@@ -312,6 +313,16 @@ void main()
 	float deltaTime = 0;
 	static int frameNr = 0;
 	static Timer timer;
+	GLTexture* appRenderer = new GLTexture(scrwidth, scrheight, GLTexture::DEFAULT);
+	appRenderer->Bind();
+	GLint swizzle[4] = {
+	GL_RED,   // Shader Red   channel source = Texture Red
+	GL_GREEN, // Shader Green channel source = Texture Green
+	GL_BLUE,  // Shader Blue  channel source = Texture Blue
+	GL_ONE    // Shader Alpha channel source = One
+	};
+	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
+	glBindTexture(GL_TEXTURE_2D, 0);
 	while (!glfwWindowShouldClose( window ))
 	{
 		deltaTime = min( 500.0f, 1000.0f * timer.elapsed() );
@@ -321,21 +332,38 @@ void main()
 		if (frameNr++ > 1)
 		{
 			// draw template application output
-			if (app->screen) renderTarget->CopyFrom( app->screen );
+			if (app->screen) renderTarget->CopyFrom(app->screen);
 			shader->Bind();
 			shader->SetInputTexture( 0, "c", renderTarget );
-			DrawQuad();
+			//DrawQuad();
+			appRenderer->CopyFrom(app->screen);
 			shader->Unbind();
 			// update imgui
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
 			app->uiUpdated = true;
+
+
+			
+
+
+			ImGui::Begin("Yes");
+			ImGui::Image((void*)appRenderer->ID, ImVec2(scrwidth, scrheight));
+			ImGui::Text("something");
+			ImGui::End();
+
+			
+			
+			
+
 			app->UI(); // app->uiUpdated will be false if Render::UI() was not implemented
 			if (app->uiUpdated)
 			{
 				ImGui::Render();
 				ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
+				CheckGL();
+
 				int display_w, display_h;
 				glfwGetFramebufferSize( window, &display_w, &display_h );
 				glViewport( 0, 0, display_w, display_h );
@@ -368,6 +396,45 @@ void main()
 	glfwDestroyWindow( window );
 	glfwTerminate();
 }
+
+///dw/dq/wdq/dqw/dwq/
+///dw/dq/wdq/dqw/dwq/
+///dw/dq/wdq/dqw/dwq/
+///dw/dq/wdq/dqw/dwq/
+// Simple helper function to load an image into a OpenGL texture with common settings
+bool LoadTextureFromMemory(const void* data, size_t data_size, GLuint* out_texture, int* out_width, int* out_height)
+{
+	// Load from file
+	int image_width = 0;
+	int image_height = 0;
+	unsigned char* image_data = stbi_load_from_memory((const unsigned char*)data, (int)data_size, &image_width, &image_height, NULL, 4);
+	if (image_data == NULL)
+		return false;
+
+	// Create a OpenGL texture identifier
+	GLuint image_texture;
+	glGenTextures(1, &image_texture);
+	glBindTexture(GL_TEXTURE_2D, image_texture);
+
+	// Setup filtering parameters for display
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// Upload pixels into texture
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+	stbi_image_free(image_data);
+
+	*out_texture = image_texture;
+	*out_width = image_width;
+	*out_height = image_height;
+
+	return true;
+}
+//qd/qw/dqw/dqw/dwq/dqw/dqw/dqw/dqw/dqw/
+//qd/qw/dqw/dqw/dwq/dqw/dqw/dqw/dqw/dqw/
+//qd/qw/dqw/dqw/dwq/dqw/dqw/dqw/dqw/dqw/
+//qd/qw/dqw/dqw/dwq/dqw/dqw/dqw/dqw/dqw/
 
 // Helper functions
 bool FileIsNewer( const char* file1, const char* file2 )
