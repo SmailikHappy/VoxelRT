@@ -1,10 +1,16 @@
 #include "template.h"
+#include <execution>
+
+#define ACCUMULATION_INDEX 0.8f
 
 // -----------------------------------------------------------
 // Calculate light transport via a ray
 // -----------------------------------------------------------
 float3 Renderer::Trace(Ray& ray, int rayStep)
 {
+	// accounting for the statistics
+	rayCount++;
+
 	scene.FindNearest(ray);
 
 	// Didn't find any voxel
@@ -19,9 +25,7 @@ float3 Renderer::Trace(Ray& ray, int rayStep)
 	bool isKeyValid = false;
 	const Material& material = scene.GetMaterialByKey(ray.voxelKey, isKeyValid);
 
-	//if (!isKeyValid) Do smth
-
-	float3 albedo = material.albedo;
+	float3 albedo = lerp(material.albedo, float3(0.0), material.metallic);;
 
 	float3 result = float3(0.0f);
 
@@ -32,9 +36,13 @@ float3 Renderer::Trace(Ray& ray, int rayStep)
 
 	if (rayStep >= MAXRAYSTEPS)	return result;
 
+	// reflect
 	float3 newDirection = 2 * dot(-normalize(ray.D), N) * N + ray.D;
+	float3 randomDirection = float3(RandomFloat() - 0.5f, RandomFloat() - 0.5f, RandomFloat() - 0.5f);
+	newDirection += material.roughness * randomDirection;
+	float3 origin = I + newDirection * 0.0001f;
 
-	Ray newRay(I + newDirection * 0.0001f, newDirection);
+	Ray newRay(origin, newDirection);
 
 	return 0.8f * result + 0.2f * Trace(newRay, ++rayStep);
 }
@@ -49,8 +57,14 @@ float3 Tmpl8::Renderer::GetSkyColor(Ray& ray)
 // -----------------------------------------------------------
 void Renderer::Init()
 {
+
+	for (uint i = 0; i < RENDERHEIGHT; i++)
+		verticalIter[i] = i;
+	for (uint i = 0; i < RENDERWIDTH; i++)
+		horizontalIter[i] = i;
+
 	dMousePos = int2{ 0, 0 };
-	//scene.LoadLevelFromFile(levelFilepath);
+	scene.LoadLevelFromFile(levelFilepath);
 }
 
 // -----------------------------------------------------------
@@ -61,26 +75,50 @@ void Renderer::Tick( float deltaTime )
 	// high-resolution timer, see template.h
 	Timer t;
 	// pixel loop: lines are executed as OpenMP parallel tasks (disabled in DEBUG)
+
+	bool cameraIsMoving = camera.HandleInput( deltaTime, dMousePos );
+
+	imageAccumulationIndex = 0.0f;
+	if (!cameraIsMoving && accumulationEnabled) imageAccumulationIndex = ACCUMULATION_INDEX;
+	
+	rayCount = 0;
+
+#define MT 1
+#if MT
 #pragma omp parallel for schedule(dynamic)
+
 	for (int y = 0; y < RENDERHEIGHT; y++)
-	{
-		// trace a primary ray for each pixel on the line
-		for (int x = 0; x < RENDERWIDTH; x++)
 		{
-			Ray r = camera.GetPrimaryRay( (float)x, (float)y );
-			float3 pixel = Trace(r, 0);
-			screen->pixels[x + y * RENDERWIDTH] = RGBF32_to_RGB8( pixel );
+			// trace a primary ray for each pixel on the line
+			for (int x = 0; x < RENDERWIDTH; x++)
+				{
+#else
+	std::for_each(std::execution::par, verticalIter.begin(), verticalIter.end(),
+		[this](uint y)
+		{
+			std::for_each(std::execution::par, horizontalIter.begin(), horizontalIter.end(),
+				[this, y](uint x)
+				{
+#endif
+					Ray r = camera.GetPrimaryRay( (float)x, (float)y );
+					float3 pixel = lerp(Trace(r, 0), RGB8_to_RGBF32(screen->pixels[x + y * RENDERWIDTH]), imageAccumulationIndex);
+
+					screen->pixels[x + y * RENDERWIDTH] = RGBF32_to_RGB8( pixel );
+#if MT
+				}
 		}
-	}
-	// performance report - running average - ms, MRays/s
-	static float avg = 10, alpha = 1;
-	avg = (1 - alpha) * avg + alpha * t.elapsed() * 1000;
-	if (alpha > 0.05f) alpha *= 0.5f;
-	float fps = 1000.0f / avg, rps = (RENDERWIDTH * RENDERHEIGHT) / avg;
-	printf( "%5.2fms (%.1ffps) - %.1fMrays/s\n", avg, fps, rps / 1000 );
-	// handle user input
-	camera.HandleInput( deltaTime, dMousePos );
-	dMousePos = int2{ 0, 0 };
+#else
+				});
+		});
+#endif
+
+	// Performance counter
+	float timePassed = t.elapsed();
+
+	float alpha = fmax(0.1f, timePassed);
+
+	frameTime = frameTime * (1 - alpha) + alpha * timePassed * 1000;
+	fps = 1000.0f / frameTime;
 }
 
 // -----------------------------------------------------------
@@ -98,10 +136,14 @@ void Renderer::UI()
 
 	ImGui::Begin("Mouse and camera");
 
-	ImGui::Text("Mouse hover: %i", r.voxelKey);
+	//ImGui::Text("Mouse hover: %i", r.voxelKey);
+
+	ImGui::Text("Frame time: %.2f ms   FPS: %.2f   Rays traced: %i", frameTime, fps, rayCount);
 
 	ImGui::SliderFloat("Camera speed", &camera.speed, 0.0f, 0.002f, "%.5f");
 	ImGui::SliderFloat("Camera sensivity", &camera.sensitivity, 0.0f, 0.02f);
+
+	ImGui::Checkbox("Acummulate pixel data", &accumulationEnabled);
 
 	ImGui::End();
 
@@ -185,16 +227,20 @@ void Renderer::UI()
 				ImGui::TableNextRow();
 				Material& material = it->second;
 
-				ImGui::PushID(0); // Just something unique
+				ImGui::PushID(it->first); // Just something unique
 
 				ImGui::TableSetColumnIndex(0);
 				ImGui::ColorEdit3("", (float*) &material.albedo);
 
+				ImGui::PushID("metallic");
 				ImGui::TableSetColumnIndex(1);
 				ImGui::SliderFloat("", &material.metallic, 0.0f, 1.0f);
+				ImGui::PopID();
 
+				ImGui::PushID("roughness");
 				ImGui::TableSetColumnIndex(2);
 				ImGui::SliderFloat("", &material.roughness, 0.0f, 1.0f);
+				ImGui::PopID();
 
 				ImGui::PopID();
 			}			

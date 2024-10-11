@@ -3,17 +3,6 @@
 // default screen resolution
 
 
-#ifdef _DEBUG
-
-#define SCRWIDTH	320
-#define SCRHEIGHT	200
-
-#else
-
-
-#endif 
-
-
 // #define FULLSCREEN
 #define DOUBLESIZE
 

@@ -3,6 +3,7 @@
 #define MAXRAYSTEPS 2
 
 #include <vector>
+#include <array>
 #include <memory>
 #include "light.h"
 
@@ -43,6 +44,14 @@ public:
 	int selectedLightIndex = -1;
 
 	char levelFilepath[256] = "C:\\Projects\\VoxelRT\\level.bin";
+	bool accumulationEnabled = true;
+
+	float frameTime, fps;
+	uint rayCount;
+	float imageAccumulationIndex;
+
+	std::array<uint, RENDERHEIGHT> verticalIter;
+	std::array<uint, RENDERWIDTH> horizontalIter;
 
 	// RT functions
 	float3 Trace(Ray& ray, int rayStep);

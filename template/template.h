@@ -131,10 +131,10 @@ using namespace Tmpl8;
 #include "opencl.h"
 #include "opengl.h"
 
-#define WINWIDTH		1280
+#define WINWIDTH		1440
 #define WINHEIGHT		960
-#define RENDERWIDTH		640
-#define RENDERHEIGHT	400
+#define RENDERWIDTH		800
+#define RENDERHEIGHT	450
 
 // fatal error reporting (with a pretty window)
 #define FATALERROR( fmt, ... ) FatalError( "Error on line %d of %s: " fmt "\n", __LINE__, __FILE__, ##__VA_ARGS__ )

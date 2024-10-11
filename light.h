@@ -22,6 +22,30 @@ struct Light
 	float outerConeAngle = 1.0f;	// for spot only
 	bool isEnabled = true;
 
+	static float3 GetLightVector(float3 pixelPos, const Light& light)
+	{
+		switch (light.type)
+		{
+		case Point:
+			return pixelPos - light.pos;
+			
+		case Directional:
+			return light.direction;
+
+		case Spot:
+			return pixelPos - light.pos;
+
+		case Area:
+			return float3(0.0f);
+
+		case Unknown:
+			return float3(0.0f);
+
+		default:
+			break;
+		}
+	}
+
 	static Light CreatePoint()
 	{
 		Light light;

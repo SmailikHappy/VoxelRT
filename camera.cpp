@@ -54,6 +54,15 @@ bool Camera::HandleInput(const float dt, const int2& mouseMovement)
 	
 	bool changed = false;
 	
+	if (IsKeyDown(GLFW_KEY_LEFT))	camAhead = normalize(camAhead - sensitivity * dt * 0.1f * right), changed = true;
+	if (IsKeyDown(GLFW_KEY_RIGHT))	camAhead = normalize(camAhead + sensitivity * dt * 0.1f * right), changed = true;
+	if (IsKeyDown(GLFW_KEY_UP))		camAhead = normalize(camAhead + sensitivity * dt * 0.1f * up), changed = true;
+	if (IsKeyDown(GLFW_KEY_DOWN))	camAhead = normalize(camAhead - sensitivity * dt * 0.1f * up), changed = true;
+
+	// recalc after applied changes
+	right = normalize(cross(tmpUp, camAhead));
+	up = normalize(cross(camAhead, right));
+	
 	if (IsKeyDown( GLFW_KEY_A )) camPos -= dmove * right, changed = true;
 	if (IsKeyDown( GLFW_KEY_D )) camPos += dmove * right, changed = true;
 	if (GetAsyncKeyState( 'W' )) camPos += dmove * camAhead, changed = true;
@@ -69,11 +78,6 @@ bool Camera::HandleInput(const float dt, const int2& mouseMovement)
 	//camAhead = normalize(camAhead + sensitivity * mouseMovement.x * right);
 	//camAhead = normalize(camAhead + sensitivity * mouseMovement.y * up);
 
-	if (IsKeyDown(GLFW_KEY_LEFT))	camAhead = normalize(camAhead - sensitivity * dt * 0.1f * right);
-	if (IsKeyDown(GLFW_KEY_RIGHT))	camAhead = normalize(camAhead + sensitivity * dt * 0.1f * right);
-	if (IsKeyDown(GLFW_KEY_UP))		camAhead = normalize(camAhead + sensitivity * dt * 0.1f * up);
-	if (IsKeyDown(GLFW_KEY_DOWN))	camAhead = normalize(camAhead - sensitivity * dt * 0.1f * up);
 
-	if (!changed) return false;
-	return true;
+	return changed;
 }
